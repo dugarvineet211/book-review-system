@@ -9,7 +9,4 @@ module.exports = {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
   testMatch: ['**/?(*.)+(spec|test).[jt]s?(x)'],
-  testPathIgnorePatterns: [
-    '<rootDir>/__tests__/resolvers.test.ts'
-  ],
 };

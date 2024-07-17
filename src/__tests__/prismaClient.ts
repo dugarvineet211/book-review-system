@@ -1,5 +1,3 @@
-import { PrismaClient } from '@prisma/client';
-
 const prismaMock = {
   book: {
     findMany: jest.fn(),
