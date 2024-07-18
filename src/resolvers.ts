@@ -18,12 +18,18 @@ export const resolvers = {
     },
     //gets a single book based on id
     getBook: async (_: any, args: { id: string }, mockContext?: unknown) => {
+      if(!args.id) {
+        return new ApolloError("Book id is mandatory!", '404');
+      }
       return prisma.book.findUnique({ where: { id: Number(args.id) }, include: {
         reviews: true
       } });
     },
     //gets all reviews of a book
     getReviews: async (_: any, args: { bookId: string, skip?: number, take?: number }) => {
+      if(!args.bookId) {
+        return new ApolloError("Book id is mandatory to fetch reviews!", '404');
+      }
       return prisma.review.findMany({ where: { bookId: Number(args.bookId) }, skip: args.skip, take: args.take });
     },
     //gets reviews posted by the logged in user
@@ -52,6 +58,15 @@ export const resolvers = {
     // register a new user with username, email and password
     register: async (_: any, args: { username: string; email: string; password: string; }, mockContext?: unknown) => {
         // check if user with given email already exists
+        if(!args.username) {
+          return new ApolloError("Username is mandatory!", '404');
+        }
+        if(!args.email) {
+          return new ApolloError("Email is mandatory!", '404');
+        }
+        if(!args.password) {
+          return new ApolloError("Password is mandatory!", '404');
+        }
       let userExistsWithGivenEmailOrUsername = await prisma.user.findFirst({
         where: {
             OR: [
@@ -76,6 +91,12 @@ export const resolvers = {
     },
     // login for a registered user
     login: async (_: any, args: { email: string; password: string; }, mockContext?: unknown) => {
+      if(!args.email) {
+        return new ApolloError("Email is mandatory!", '404');
+      }
+      if(!args.password) {
+        return new ApolloError("Password is mandatory!", '404');
+      }
       const user = await prisma.user.findUnique({ where: { email: args.email } });
       // check to see if user exists or not
       if(!user) {
@@ -89,14 +110,40 @@ export const resolvers = {
     },
     // add a new book via an authenticated user
     addBook: async (_: any, args: { title: string, author: string, publishedYear: number }, context: Context) => {
+      if(!args.title) {
+        return new ApolloError("Book title is mandatory!", '404');
+      }
+      if(!args.author) {
+        return new ApolloError("Book title is mandatory!", '404');
+      }
+      if(!args.publishedYear) {
+        return new ApolloError("Book title is mandatory!", '404');
+      }
       if (!context.userId) 
         throw new ApolloError('You are not authorized to add books! Please login or signup!', '403');
       return prisma.book.create({ data: args });
     },
     // add a review for a book via an authenticated user
     addReview: async (_: any, args: { bookId: string, rating: number, comment: string }, context: Context) => {
+      if(!args.bookId) {
+        return new ApolloError("Book id is mandatory!", '404');
+      }
+      if(!args.rating) {
+        return new ApolloError("Rating is mandatory and should be greater than 0!", '404');
+      }
+      if(!args.comment) {
+        return new ApolloError("Comment is mandatory!", '404');
+      }
       if (!context.userId) 
         throw new ApolloError('You are not authorized to add reviews! Please login or signup', '403');
+      const user = await prisma.user.findUnique({
+        where: {
+          id: context.userId
+        }
+      });
+      if(!user) {
+        throw new ApolloError("User not found! Please try again later!");
+      }
       return prisma.review.create({
         data: {
           bookId: Number(args.bookId),
@@ -110,17 +157,30 @@ export const resolvers = {
     updateReview: async (_: any, args: { reviewId: string, rating?: number, comment?: string }, context: Context) => {
       if (!context.userId) 
         throw new ApolloError('You are not authorized to update reviews! Please login or signup', '403');
+      const user = await prisma.user.findUnique({
+        where: {
+          id: context.userId
+        }
+      });
+      if(!user) {
+        throw new ApolloError("User not found! Please try again later!");
+      }
     // find if review exists
       const review = await prisma.review.findUnique({ where: { id: Number(args.reviewId) } });
       if (!review || review.userId !== context.userId) 
         throw new ApolloError('You are not authorized to update this review!', '403');
+      let rating = args.rating ? args.rating : review.rating;
+      let comment = args.comment ? args.comment : review.comment;
       return prisma.review.update({
         where: { id: Number(args.reviewId) },
-        data: { rating: args.rating, comment: args.comment },
+        data: { rating: rating, comment: comment },
       });
     }, 
     // delete an existing review via an authenticated user
     deleteReview: async (_: any, args: { reviewId: string }, context: Context) => {
+      if(!args.reviewId) {
+        throw new ApolloError("Review id is mandatory!", '404');
+      }
       if (!context.userId) 
         throw new ApolloError('You are not authorized to delete reviews! Please login or signup', '403');
     // find review to delete
