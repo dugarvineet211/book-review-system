@@ -7,6 +7,16 @@ import { hashPassword, createToken } from './utils/utils.js';
 //Initializing instance of prisma client
 const prisma = new PrismaClient();
 
+async function findReviewById(reviewId: string) {
+  return await prisma.review.findUnique({ where: { id: Number(reviewId) } });
+}
+
+async function findUserById(userId: number) {
+  return await prisma.user.findUnique({where: {
+    id: userId
+  }});
+}
+
 export const resolvers = {
     //Queries available in the application
   Query: {
@@ -16,6 +26,7 @@ export const resolvers = {
         reviews: true
       }});
     },
+
     //gets a single book based on id
     getBookById: async (_: any, args: { id: string }, mockContext?: unknown) => {
       if(!args.id) {
@@ -25,6 +36,7 @@ export const resolvers = {
         reviews: true
       } });
     },
+
     //gets all reviews of a book
     getReviews: async (_: any, args: { bookId: string, skip?: number, take?: number }) => {
       if(!args.bookId) {
@@ -32,12 +44,14 @@ export const resolvers = {
       }
       return prisma.review.findMany({ where: { bookId: Number(args.bookId) }, skip: args.skip, take: args.take });
     },
+
     //gets reviews posted by the logged in user
     getMyReviews: async (_: any, args: { skip?: number, take?: number }, context: Context) => {
       if (!context.userId) 
         throw new ApolloError('You are not authenticated to view the reviews!', '403');
       return prisma.review.findMany({ where: { userId: context.userId }, skip: args.skip, take: args.take });
     },
+
     // returns books based on search params for title or author
     searchBooksByAuthorOrBookName: async (_: any, args: { query: string; }, mockContext?: unknown) => {
         return prisma.book.findMany({
@@ -53,6 +67,7 @@ export const resolvers = {
           });
       },
   },
+
 // Mutations available in the app
   Mutation: {
     // register a new user with username, email and password
@@ -89,6 +104,7 @@ export const resolvers = {
       
       return { token: createToken(createdUser), user: createdUser };
     },
+
     // login for a registered user
     login: async (_: any, args: { email: string; password: string; }, mockContext?: unknown) => {
       if(!args.email) {
@@ -108,6 +124,7 @@ export const resolvers = {
       }
       return { token: createToken(user), user };
     },
+
     // add a new book via an authenticated user
     addBook: async (_: any, args: { title: string, author: string, publishedYear: number }, context: Context) => {
       if(!args.title) {
@@ -123,6 +140,7 @@ export const resolvers = {
         throw new ApolloError('You are not authorized to add books! Please login or signup!', '403');
       return prisma.book.create({ data: args });
     },
+
     // add a review for a book via an authenticated user
     addReview: async (_: any, args: { bookId: string, rating: number, comment: string }, context: Context) => {
       if(!args.bookId) {
@@ -136,11 +154,7 @@ export const resolvers = {
       }
       if (!context.userId) 
         throw new ApolloError('You are not authorized to add reviews! Please login or signup', '403');
-      const user = await prisma.user.findUnique({
-        where: {
-          id: context.userId
-        }
-      });
+      const user = await findUserById(context.userId);
       if(!user) {
         throw new ApolloError("User not found! Please try again later!");
       }
@@ -153,29 +167,28 @@ export const resolvers = {
         },
       });
     },
+
     // update an existing review via an authenticated user
     updateReview: async (_: any, args: { reviewId: string, rating?: number, comment?: string }, context: Context) => {
       if (!context.userId) 
         throw new ApolloError('You are not authorized to update reviews! Please login or signup', '403');
-      const user = await prisma.user.findUnique({
-        where: {
-          id: context.userId
-        }
-      });
+      const user = await findUserById(context.userId);
       if(!user) {
         throw new ApolloError("User not found! Please try again later!");
       }
+
     // find if review exists
-      const review = await prisma.review.findUnique({ where: { id: Number(args.reviewId) } });
+      const review = await findReviewById(args.reviewId);
       if (!review || review.userId !== context.userId) 
         throw new ApolloError('You are not authorized to update this review!', '403');
-      let rating = args.rating ? args.rating : review.rating;
-      let comment = args.comment ? args.comment : review.comment;
+      let rating = args.rating ? args.rating : review.rating; // if no rating in params, then update with existing rating
+      let comment = args.comment ? args.comment : review.comment; // if no comment in params, then update with existing comment
       return prisma.review.update({
         where: { id: Number(args.reviewId) },
         data: { rating: rating, comment: comment },
       });
     }, 
+
     // delete an existing review via an authenticated user
     deleteReview: async (_: any, args: { reviewId: string }, context: Context) => {
       if(!args.reviewId) {
@@ -184,7 +197,7 @@ export const resolvers = {
       if (!context.userId) 
         throw new ApolloError('You are not authorized to delete reviews! Please login or signup', '403');
     // find review to delete
-      const review = await prisma.review.findUnique({ where: { id: Number(args.reviewId) } });
+    const review = await findReviewById(args.reviewId);
       if (!review) 
         throw new ApolloError('Review not available!', '404');
       if(review.userId !== context.userId)
