@@ -17,7 +17,7 @@ export const resolvers = {
       }});
     },
     //gets a single book based on id
-    getBook: async (_: any, args: { id: string }, mockContext?: unknown) => {
+    getBookById: async (_: any, args: { id: string }, mockContext?: unknown) => {
       if(!args.id) {
         return new ApolloError("Book id is mandatory!", '404');
       }
@@ -39,7 +39,7 @@ export const resolvers = {
       return prisma.review.findMany({ where: { userId: context.userId }, skip: args.skip, take: args.take });
     },
     // returns books based on search params for title or author
-    searchBooks: async (_: any, args: { query: string; }, mockContext?: unknown) => {
+    searchBooksByAuthorOrBookName: async (_: any, args: { query: string; }, mockContext?: unknown) => {
         return prisma.book.findMany({
             where: {
               OR: [

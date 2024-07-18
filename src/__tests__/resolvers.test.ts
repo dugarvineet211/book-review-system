@@ -191,7 +191,7 @@ beforeAll(async () => {
         reviews: [],
       });
 
-      const result = await resolvers.Query.getBook(null, { id: "1" }, { prisma: prismaMock, userId: 1 });
+      const result = await resolvers.Query.getBookById(null, { id: "1" }, { prisma: prismaMock, userId: 1 });
 
       expect(result).toEqual({
         id: 1,
@@ -213,7 +213,7 @@ beforeAll(async () => {
         },
       ]);
 
-      const result = await resolvers.Query.searchBooks(null, { query: 'Book' }, { prisma: prismaMock, userId: 1 });
+      const result = await resolvers.Query.searchBooksByAuthorOrBookName(null, { query: 'Book' }, { prisma: prismaMock, userId: 1 });
 
       expect(result).toEqual([
         {

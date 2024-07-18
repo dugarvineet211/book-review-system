@@ -37,10 +37,10 @@ export const typeDefs = gql`
 
   type Query {
     getBooks(skip: Int, take: Int): [Book!]!
-    getBook(id: ID!): Book
+    getBookById(id: ID!): Book
     getReviews(bookId: ID!, skip: Int, take: Int): [Review]
     getMyReviews(skip: Int, take: Int): [Review]
-    searchBooks(query: String!): [Book]
+    searchBooksByAuthorOrBookName(query: String!): [Book]
   }
 
   type Mutation {
